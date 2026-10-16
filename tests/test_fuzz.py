@@ -60,15 +60,16 @@ def make_picture(rnd: random.Random, folder, n: int):
     if fmt == "JPEG":
         kwargs["quality"] = rnd.choice([40, 75, 92, 100])
     if fmt == "HEIF":
-        import pillow_heif
-
-        pillow_heif.register_heif_opener()
         kwargs["quality"] = 90
     sub = folder / rnd.choice(["", "a", "a/b"])
     os.makedirs(sub, exist_ok=True)
     name = rnd.choice(["IMG_{n}", "사진 {n}", "photo {n} #&%", "IMG_{n}_small_not"]).format(n=n)
     path = sub / (name + (ext.upper() if rnd.random() < 0.2 else ext))
-    img.save(path, fmt, **kwargs)
+    if fmt == "HEIF":  # written with pillow-heif's encoder, read back by the program with pi-heif
+        ms.save_heic(img.convert("RGBA") if mode in ("RGBA", "LA") else img.convert("RGB"), str(path),
+                     kwargs["quality"], kwargs.get("exif", b""))
+    else:
+        img.save(path, fmt, **kwargs)
     return path, (gps and fmt != "BMP"), (w, h), fmt
 
 

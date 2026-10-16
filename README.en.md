@@ -95,4 +95,10 @@ When a newer version exists, one line appears at the bottom of the window. **Upd
 
 ## License
 
-The code in this repository is MIT ([LICENSE](LICENSE)). The released `photo-resize.exe` contains pillow-heif for reading HEIC, and because of the x265 (GPLv2), libheif and libde265 (LGPLv3) libraries inside it **the exe as a whole is distributed under the GPLv2**. Bundled libraries and where their source is: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Libraries used: Pillow, pillow-heif, piexif, sv-ttk, tkinterdnd2.
+The code in this repository is MIT ([LICENSE](LICENSE)). HEIC is read with **pi-heif**, the read-only build of pillow-heif, so the GPLv2 x265 encoder is not in `photo-resize.exe`. The HEIC decoding libraries it does carry, libheif and libde265, are **LGPL-3.0**.
+
+- They stay separate DLLs inside the exe; with this repository's source and `build.bat` you can rebuild the exe with other versions of them.
+- The license texts are in `licenses/` (also inside the exe).
+- Libraries and where their source is: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)
+
+Libraries used: Pillow, pi-heif (libheif, libde265), piexif, sv-ttk, tkinterdnd2.

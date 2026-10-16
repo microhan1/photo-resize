@@ -1,3 +1,5 @@
 -r requirements.txt
 pytest>=8
 pyinstaller>=6
+# only to write HEIC samples for the tests (the program reads HEIC with pi-heif)
+pillow-heif>=1.0

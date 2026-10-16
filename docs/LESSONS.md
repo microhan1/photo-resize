@@ -24,7 +24,8 @@
 
 ## L6. pillow-heif 바이너리의 x265(GPLv2) (2026-10-16)
 - pillow-heif Windows 휠의 libheif DLL은 libx265 DLL을 직접 불러온다(가져오기 표에 있음). 디코딩만 써도 빼면 로드가 안 된다.
-- 결과: 저장소 코드는 MIT, exe 전체는 GPLv2 조건(THIRD_PARTY_LICENSES.md). 사진 정리(photo-organizer) exe도 같은 처지.
+- 처음 결과: 저장소 코드는 MIT, exe 전체는 GPLv2 조건. 사진 정리(photo-organizer) exe도 같은 처지.
+- **해결(2026-10-16 사장님 결정, 허브 전달): 읽기 전용판 pi-heif로 교체.** pi-heif 1.4.0 휠에는 x265 DLL이 없고 libheif 가져오기 표에도 없다. 남는 libheif 1.23.0·libde265 1.1.1은 LGPL-3.0(휠의 LICENSES_bundled.txt는 1.18.1·1.0.15로 낡음 — 실행 중 `libheif_info()` 값을 믿을 것). pillow-heif는 시험용 HEIC 샘플을 **쓰는 데만** 쓰고, Pillow 플러그인으로 등록하지 않는다(등록하면 시험이 pi-heif가 아니라 pillow-heif로 읽어 증명이 안 된다). `shrink.register_heif`는 부를 때마다 여는 쪽이 pi-heif인지 확인한다. 증명: `tests/test_heic_reader.py`(같은 픽셀·EXIF·ICC·결과 바이트, 10비트 포함, 새 프로세스에서 pillow_heif 미적재).
 
 ## L7. 신중 시험(2026-10-16 오후)에서 찾은 엔진 결함 8가지
 실측 탐색(`probe`)과 경계·퍼징 시험으로 찾았다. 모두 `tests/test_edge_cases.py`·`tests/test_fuzz.py`가 지킨다.

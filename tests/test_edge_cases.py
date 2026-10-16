@@ -79,13 +79,9 @@ def test_every_orientation_comes_out_upright(tmp_path, orientation):
 
 
 def test_heic_with_orientation_comes_out_upright(tmp_path):
-    import pillow_heif
-
-    pillow_heif.register_heif_opener()
     upright = quadrants(900, 600)
     stored = upright.transpose(Image.Transpose.ROTATE_90)  # shown upright with Orientation 6
-    path = str(tmp_path / "rot.heic")
-    stored.save(path, "HEIF", quality=95, exif=ms.exif_bytes(6, True))
+    path = ms.save_heic(stored, str(tmp_path / "rot.heic"), 95, ms.exif_bytes(6, True))
     (r,) = run([path], target_kb=200)
     with Image.open(r.dst) as im:
         assert abs(im.width / im.height - 1.5) < 0.01  # landscape again (the target may make it smaller)

@@ -84,14 +84,19 @@ class Cancelled(Exception):
 
 
 def register_heif() -> bool:
-    """pillow-heif as a Pillow plugin (HEIC/HEIF). False when it cannot be loaded."""
+    """pi-heif (the read-only build of pillow-heif: no HEVC encoder, so no GPLv2 x265 in the
+    exe) as Pillow's HEIC/HEIF reader. Checked on every call, so another HEIF plugin loaded
+    later (pillow-heif in the tests) never takes over. False when it cannot be loaded."""
     global _heif_ready
-    with _heif_lock:
-        if not _heif_ready:
-            try:
-                import pillow_heif
+    from PIL import Image
 
-                pillow_heif.register_heif_opener()
+    with _heif_lock:
+        factory = Image.OPEN.get("HEIF", (None,))[0]
+        if not _heif_ready or getattr(factory, "__module__", "").split(".")[0] != "pi_heif":
+            try:
+                import pi_heif
+
+                pi_heif.register_heif_opener()
                 _heif_ready = True
             except Exception:
                 return False

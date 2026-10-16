@@ -95,4 +95,10 @@ python main.py D:\사진 --mode quality --quality medium --no-recursive
 
 ## 라이선스
 
-이 저장소의 코드는 MIT입니다([LICENSE](LICENSE)). 배포하는 `photo-resize.exe`에는 HEIC를 읽는 pillow-heif가 들어 있고, 그 안의 x265(GPLv2)·libheif·libde265(LGPLv3) 때문에 **exe 전체는 GPLv2 조건으로 배포됩니다**. 함께 묶인 라이브러리와 소스 위치는 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)에 있습니다. 사용한 라이브러리: Pillow, pillow-heif, piexif, sv-ttk, tkinterdnd2.
+이 저장소의 코드는 MIT입니다([LICENSE](LICENSE)). HEIC는 저장 기능을 뺀 읽기 전용판 **pi-heif**로 읽어, GPLv2인 x265 인코더는 `photo-resize.exe`에 들어 있지 않습니다. exe에 함께 들어가는 HEIC 해독 라이브러리 libheif·libde265는 **LGPL-3.0**입니다.
+
+- 이 두 라이브러리는 exe 안에서도 따로 된 DLL로 남아 있습니다. 이 저장소의 소스와 `build.bat`으로 다른 버전으로 바꿔 다시 빌드할 수 있습니다.
+- 라이선스 전문은 `licenses/` 폴더에(exe 안에도) 있습니다.
+- 라이브러리 목록과 소스 위치: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)
+
+사용한 라이브러리: Pillow, pi-heif(libheif·libde265), piexif, sv-ttk, tkinterdnd2.

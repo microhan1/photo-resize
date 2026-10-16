@@ -1,34 +1,47 @@
 # Third-party licenses / 함께 묶인 라이브러리의 라이선스
 
 The source code of this repository is MIT (see `LICENSE`). The released single-file
-`photo-resize.exe` (PyInstaller) also contains the libraries below. Because the
-pillow-heif binary wheel links **x265 (GPLv2)** into libheif, the exe as a combined work is
-distributed under the terms of the **GNU GPL version 2**; the MIT code of this repository
-is compatible with that. Each library keeps its own license.
+`photo-resize.exe` (PyInstaller) also contains the libraries below, each under its own
+license. HEIC photos are read with **pi-heif**, the read-only build of pillow-heif: it has
+no HEVC encoder, so the GPLv2 **x265 is not in the exe**. The HEVC decoder (libde265) and
+libheif that remain are **LGPL-3.0**; how this exe meets the LGPL is explained below.
 
-이 저장소의 코드는 MIT입니다. 배포하는 exe에는 아래 라이브러리가 함께 들어 있습니다.
-pillow-heif 바이너리가 libheif에 x265(GPLv2)를 연결해 두었기 때문에(이 도구는 HEIC를
-읽기만 하지만 libheif가 x265를 직접 불러오도록 빌드되어 있어 뺄 수 없음) **exe 전체는
-GPLv2 조건으로 배포**합니다. 각 라이브러리는 자기 라이선스를 그대로 따릅니다.
+이 저장소의 코드는 MIT입니다. 배포하는 exe에는 아래 라이브러리가 함께 들어 있고, 각자 자기
+라이선스를 따릅니다. HEIC는 저장 기능을 뺀 읽기 전용판 **pi-heif**로 읽습니다. HEVC 인코더가
+없어 **GPLv2인 x265는 exe에 들어 있지 않습니다**. 남는 libheif·libde265는 **LGPL-3.0**이며,
+이 exe가 LGPL 조건을 지키는 방법은 아래에 적었습니다.
 
-Versions are those of the build environment of v0.1.0 (2026-10-16).
+Versions are those of the v0.1.0 build (2026-10-16), read from the installed packages.
 
-## pillow-heif 1.8.0 and the libraries in its Windows wheel
+## pi-heif 1.4.0 and the libraries in its Windows wheel
 
 | Library | Version | License | Source |
 | --- | --- | --- | --- |
-| pillow-heif | 1.8.0 | BSD-3-Clause (source); the binary wheel: GPLv2 because of x265 | https://github.com/bigcat88/pillow_heif |
-| libheif | 1.23.4 | LGPL-3.0 | https://github.com/strukturag/libheif/tree/v1.23.4 |
-| libde265 (HEVC decoder) | 1.1.3 | LGPL-3.0 | https://github.com/strukturag/libde265/tree/v1.1.3 |
-| x265 (HEVC encoder, linked by libheif, not used by this tool) | 4.2 / 4.3 | GPL-2.0 | https://bitbucket.org/multicoreware/x265_git/src/4.2 |
-| MinGW-w64 runtime (libgcc, libstdc++) | — | GPL-3.0 with GCC Runtime Library Exception | https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/COPYING |
+| pi-heif | 1.4.0 | BSD-3-Clause (its own code); the binary wheel as a whole: LGPL-3.0 | https://github.com/bigcat88/pillow_heif (pi-heif is built from it) · https://pypi.org/project/pi-heif/1.4.0/ |
+| libheif | 1.23.0 | LGPL-3.0 | https://github.com/strukturag/libheif |
+| libde265 (HEVC decoder) | 1.1.1 | LGPL-3.0 | https://github.com/strukturag/libde265 |
+| MinGW-w64 runtime (libgcc_s_seh, libstdc++) | — | GPL-3.0 with the GCC Runtime Library Exception (allows use in programs under any license) | https://www.mingw-w64.org/ |
 | MinGW-w64 libwinpthread | — | MIT and BSD | (same) |
 
-The LGPL libraries are separate DLLs inside the exe (PyInstaller unpacks them to a
-temporary folder at start); they can be replaced by building the exe from this source
-with other DLLs (`build.bat`). Source of the exact versions: the links above, and the
-pillow-heif 1.8.0 source distribution on PyPI (https://pypi.org/project/pillow-heif/1.8.0/).
-Questions about the source of the GPL/LGPL parts: the GitHub issues of this repository.
+The versions are what the libraries report at run time (`pi_heif.libheif_info()`); the
+wheel's own `LICENSES_bundled.txt` still names libheif 1.18.1 and libde265 1.0.15. No x265
+DLL is in the wheel or in the exe, and libheif's import table names no x265 (checked
+2026-10-16).
+
+### The LGPL-3.0 libraries in a single-file exe
+
+- They stay separate DLLs (`libheif-*.dll`, `libde265-*.dll`) inside the exe; PyInstaller
+  unpacks them to a temporary folder at start and the program loads them from there.
+- You may replace them: this repository holds the complete source of the program and its
+  build script (`build.bat`), so the exe can be rebuilt with a modified or newer libheif /
+  libde265 (install another pi-heif wheel, or put your own DLLs in its place, and build).
+- The program's own license (MIT) allows modifying it and reverse engineering for
+  debugging such modifications, as LGPL-3.0 section 4 asks.
+- The license texts come with the program, in `licenses/` (repository and exe):
+  `LGPL-3.0.txt`, `GPL-3.0.txt` (the GNU GPL 3.0 that the LGPL 3.0 builds on) and
+  `GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`.
+- Source of the LGPL parts: the links above (libheif, libde265), and pi-heif's source
+  distribution on PyPI. Questions: the GitHub issues of this repository.
 
 ## Pillow 12.2.0 and the libraries in its Windows wheel
 
@@ -48,7 +61,7 @@ Questions about the source of the GPL/LGPL parts: the GitHub issues of this repo
 | xz 5.8.3 | 0BSD |
 | zlib-ng 2.3.3 | zlib |
 
-The full texts are in Pillow's `LICENSE` file (installed as `pillow-*.dist-info/licenses/LICENSE`).
+The full texts are in Pillow's `LICENSE` file (installed as `pillow-*.dist-info/licenses/LICENSE`, also inside the exe).
 
 ## Others
 
@@ -59,4 +72,7 @@ The full texts are in Pillow's `LICENSE` file (installed as `pillow-*.dist-info/
 | tkinterdnd2 0.6.3 (with tkdnd) | MIT (tkinterdnd2), BSD-style (tkdnd) | https://github.com/Eliav2/tkinterdnd2 |
 | Python 3 | PSF License | https://www.python.org/ |
 | Tcl/Tk | Tcl/Tk License (BSD-style) | https://www.tcl.tk/ |
-| PyInstaller bootloader | GPL-2.0 with the PyInstaller bootloader exception | https://github.com/pyinstaller/pyinstaller |
+| PyInstaller bootloader | GPL-2.0 with the PyInstaller bootloader exception (allows any license for the bundled program) | https://github.com/pyinstaller/pyinstaller |
+
+pillow-heif (whose binary wheel contains x265, GPLv2) is used only by the test suite to
+write HEIC samples; it is not part of the program or the exe.

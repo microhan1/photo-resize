@@ -102,13 +102,24 @@ def png_opaque(path: str, w: int = 1600, h: int = 1200) -> str:
     return path
 
 
-def heic(path: str, w: int = 2000, h: int = 1500, gps: bool = True) -> str:
+def save_heic(img: Image.Image, path: str, quality: int = 90, exif: bytes = b"", icc: bytes = b"") -> str:
+    """Write a HEIC with pillow-heif's encoder (the program itself only reads, with pi-heif).
+    pillow-heif is NOT registered as a Pillow plugin, so the program under test still opens
+    every HEIC with pi-heif."""
     import pillow_heif
 
-    pillow_heif.register_heif_opener()
-    img = picture(w, h, 5, 0.3)
-    img.save(path, "HEIF", quality=90, exif=exif_bytes(1, gps, w=w, h=h), icc_profile=srgb_icc())
+    heif = pillow_heif.from_pillow(img)
+    if exif:
+        heif.info["exif"] = exif
+    if icc:
+        heif.info["icc_profile"] = icc
+    heif.save(path, quality=quality)
     return path
+
+
+def heic(path: str, w: int = 2000, h: int = 1500, gps: bool = True) -> str:
+    img = picture(w, h, 5, 0.3)
+    return save_heic(img, path, 90, exif_bytes(1, gps, w=w, h=h), srgb_icc())
 
 
 def small_jpeg(path: str, w: int = 320, h: int = 240) -> str:

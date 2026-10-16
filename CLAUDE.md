@@ -17,6 +17,7 @@
 - GUI와 CLI가 함께 쓰는 처리는 전부 `shrink.py`. 화면 문구는 전부 `lang/*.json`(ko·en 같은 키·같은 치환자). 언어는 파일만 더하면 늘어난다(`i18n.available_langs`).
 - 배경 스레드(추정·미리보기·실행)는 모듈 함수로 두고 `queue`에 튜플만 넣는다. Tk 쪽이 `after(POLL_MS)`로 꺼낸다. 창을 닫을 때는 모든 배경 스레드를 기다린다.
 - 위젯을 버릴 때(언어 바꾸기, 방법 바꾸기, 닫기)는 `_collect_now()`로 주 스레드에서 gc. 순환 참조 속 Tk 변수가 작업 스레드의 gc에서 풀리면 오류다(LESSONS L1).
+- HEIC는 **pi-heif**(읽기 전용, x265 없음)로만 읽는다. pillow-heif는 시험 샘플을 쓰는 데만(`make_samples.save_heic`, 플러그인 등록 금지). exe에 pillow_heif·libx265가 없는지 빌드 뒤 목록으로 확인(LESSONS L6).
 - 칩(목표 용량·방법·결과 위치·배율)은 `ChipGroup`. sv-ttk의 `Toolbutton` 라디오는 선택 상태를 안 보여 준다(LESSONS L2).
 - 코드 속 비ASCII 문자열은 언어 이름과 글꼴 이름(`theme.MALGUN`, `\u` 이스케이프)뿐. 시험이 검사한다.
 
