@@ -34,4 +34,6 @@ samples/out/
 
 # local-only notes for Claude
 CLAUDE.local.md
-.claude/
+# Claude Code: worktrees and local settings stay out; the shared agents (.claude/agents/) are kept
+.claude/*
+!.claude/agents/
