@@ -27,6 +27,11 @@
 2. 화면을 바꾸면 하네스로 찍어 직접 본다: 기본 크기와 최소 크기(`theme.WINDOW_MIN`), ko·en, 빈 목록·실행 끝·새 버전 알림. 설정 저장은 막고(`prefs.save`), 새 버전 응답은 가짜로.
 3. 사진은 `samples/make_samples.py`로 만든 것만 쓴다. 사용자 사진 폴더에서 돌리지 않는다.
 
+## 허브 보고
+
+- 상시 규칙(사장님 2026-10-22, 전역 CLAUDE.md §10): 이 저장소에서 작업(커밋·릴리스·시험·README·지시서 처리)이 끝날 때마다, 사장님이 따로 말하지 않아도 `hub-liaison` 에이전트로 허브 세션(「메인 통합 프로젝트」, `local_121cb46b-1241-4d83-bdaa-e57d4dd2848e`)에 6항목 형식(무엇·시험·릴리스·지시서와 다른 점·허브가 할 일·사장님 결정)으로 보고한다.
+- 전송이 안 되면 허브 받은 편지함 `D:\my\ReadBooksProject\docs\프로젝트_포트폴리오\inbox\` 에 파일로 남기고 그 경로를 사장님께 알린다.
+
 ## 빌드 (Windows)
 
 - PowerShell에서 `& "$env:ComSpec" /c "D:\my\photo-resize\build.bat"`. 먼저 `Get-Process photo-resize`로 사용자가 켜 둔 exe가 없는지 본다.
