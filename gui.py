@@ -56,10 +56,14 @@ ESTIMATE_DELAY_MS = 350
 PREVIEW_DELAY_MS = 150
 ESTIMATE_SAMPLE = 12
 ZOOMS = ("fit", 1.0, 2.0, 4.0)
-# The fixed columns fit their longest text in all four languages; the name column starts
-# small and takes whatever is left, so all five fit the smallest window (about 560 px wide).
-COLUMNS = (("name", 100, True, "w"), ("before", 72, False, "e"), ("after", 80, False, "e"),
-           ("pixels", 92, False, "center"), ("status", 190, False, "w"))
+COLUMNS = (("name", "w"), ("before", "e"), ("after", "e"), ("pixels", "center"), ("status", "w"))
+COLUMN_NAMES = tuple(c[0] for c in COLUMNS)
+# the widest usual value of each short column; a longer one is shortened with an ellipsis
+COLUMN_SAMPLES = {"before": "999.9 MB", "after": f"{ABOUT} 999.9 MB", "pixels": f"88888{TIMES}8888"}
+NAME_SHARE = 0.25  # the file name keeps at least this share of the list's width
+CELL_PAD = 14  # design px around a cell's text
+HEAD_PAD = 20  # design px around a heading's text
+FIT_DELAY_MS = 60
 CUSTOM = "custom"
 
 
@@ -222,6 +226,11 @@ class App:
         self._drag = None
         self._photos: list = []  # PhotoImage references
         self._redraw_after = None
+        self.full_rows: dict[str, tuple] = {}  # each row's whole texts; the table shows them fitted
+        self.col_widths: dict[str, int] = {}
+        self._fit_cache: dict[tuple, str] = {}
+        self._fit_after = None
+        self.tip: tk.Toplevel | None = None
         self.run_thread: threading.Thread | None = None
         self.run_cancel: threading.Event | None = None
         self.running = False
@@ -300,6 +309,7 @@ class App:
             if not isinstance(w, tk.Toplevel):
                 w.destroy()
         _collect_now()
+        self._show_tip("")
         self._fonts()
         self.lockable, self.chip_groups = [], []
         self.root.title(f"{t('app_title')} {APP_VERSION}")
@@ -385,11 +395,14 @@ class App:
         self.paned.pack(fill="both", expand=True, pady=(P, 0))
 
         table = ttk.Frame(self.paned)
-        cols = [c[0] for c in COLUMNS]
-        self.tree = ttk.Treeview(table, columns=cols, show="headings", selectmode="extended")
-        for name, width, stretch, anchor in COLUMNS:
+        self.tree = ttk.Treeview(table, columns=COLUMN_NAMES, show="headings", selectmode="extended")
+        # the widths are set from the list's own width (_on_tree_resize), not by Tk's stretching,
+        # which does not shrink the columns when the window starts small
+        self.col_widths, self._fit_cache = {}, {}
+        for name, anchor in COLUMNS:
             self.tree.heading(name, text=t(f"col_{name}"), anchor=anchor)
-            self.tree.column(name, width=px(width), minwidth=px(60), stretch=stretch, anchor=anchor)
+            self.tree.column(name, width=px(200 if name == "name" else 90), minwidth=px(20), stretch=False,
+                             anchor=anchor)
         self.tree.tag_configure("odd", background=C["stripe"])
         self.tree.tag_configure(shrink.OVER, foreground=C["warn"])
         self.tree.tag_configure(shrink.FAILED, foreground=C["err"])
@@ -402,6 +415,9 @@ class App:
         self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Delete>", lambda e: self.remove_selected())
+        self.tree.bind("<Configure>", self._on_tree_resize)
+        self.tree.bind("<Motion>", self._on_tree_motion)
+        self.tree.bind("<Leave>", lambda e: self._show_tip(""))
         # empty list: a dashed drop area over the table
         self.drop = tk.Canvas(table, bg=C["surface"], highlightthickness=0, cursor="hand2")
         self.drop.bind("<Configure>", lambda e: self._draw_drop())
@@ -765,9 +781,12 @@ class App:
     def _fill_table(self) -> None:
         sel = self.tree.selection()
         self.tree.delete(*self.tree.get_children())
+        self.full_rows = {}
         for i in range(len(self.items)):
             values, tag = self._row(i)
-            self.tree.insert("", "end", iid=str(i), values=values, tags=(tag, "odd" if i % 2 else "even"))
+            self.full_rows[str(i)] = values
+            self.tree.insert("", "end", iid=str(i), values=self._fit_values(values),
+                             tags=(tag, "odd" if i % 2 else "even"))
         keep = [s for s in sel if self.tree.exists(s)]
         if keep:
             self.tree.selection_set(keep)
@@ -782,7 +801,138 @@ class App:
     def _update_row(self, i: int) -> None:
         if self.tree.exists(str(i)):
             values, tag = self._row(i)
-            self.tree.item(str(i), values=values, tags=(tag, "odd" if i % 2 else "even"))
+            self.full_rows[str(i)] = values
+            self.tree.item(str(i), values=self._fit_values(values), tags=(tag, "odd" if i % 2 else "even"))
+
+    # the columns always add up to the list's width, so the status column never leaves the
+    # window; a text longer than its column is shortened with an ellipsis and shown whole in
+    # a tip while the mouse is over it
+    def _measure(self, text: str, font) -> int:
+        return int(self.root.tk.call("font", "measure", font, text))
+
+    def _tree_inset(self) -> int:
+        """Space between the list's edge and its first column (the theme's field border)."""
+        y = px(12)  # inside the heading row
+        for x in range(px(24)):
+            if self.tree.identify_region(x, y) != "nothing":
+                return x
+        return px(4)
+
+    def _column_widths(self, inner: int) -> dict[str, int]:
+        """Screen px adding up to `inner`: each short column as wide as its heading and its
+        widest usual value, the status as wide as its usual texts while the name keeps
+        NAME_SHARE, the name everything left. Short of room, columns give up to their headings."""
+        cell, head = px(CELL_PAD), px(HEAD_PAD)
+        floor = {c: self._measure(t(f"col_{c}"), self.f_bold) + head for c in COLUMN_NAMES}
+        need = dict(floor)
+        for c, sample in COLUMN_SAMPLES.items():
+            need[c] = max(floor[c], self._measure(sample, self.f_body) + cell)
+        q = shrink.MAX_QUALITY
+        usual = [t("st_done_q", q=q), t("st_expected", text=t("st_done_q", q=q)), t("st_over"), t("st_over_none"),
+                 t("st_small"), t("st_cancelled")]
+        marks = set(GLYPHS.values())  # sized for the widest mark, whichever a row shows
+        need["status"] = max(floor["status"], max(self._measure(f"{g} {s}", self.f_body) for g in marks
+                                                  for s in usual) + cell)
+        short = ("before", "after", "pixels")
+        widths = {c: need[c] for c in short}
+        name_min = max(floor["name"], int(inner * NAME_SHARE))
+        widths["status"] = max(floor["status"], min(need["status"], inner - sum(widths.values()) - name_min))
+        widths["name"] = max(floor["name"], inner - sum(widths[c] for c in (*short, "status")))
+        over = sum(widths.values()) - inner
+        for c in short:  # a very narrow list: the short columns give up room down to their headings
+            if over <= 0:
+                break
+            give = min(over, widths[c] - floor[c])
+            widths[c] -= give
+            over -= give
+        return widths
+
+    def _on_tree_resize(self, event=None) -> None:
+        width = self.tree.winfo_width()
+        if width <= 1:
+            return
+        widths = self._column_widths(width - 2 * self._tree_inset())
+        if widths == self.col_widths:
+            return
+        self.col_widths = widths
+        self._fit_cache = {}
+        for c, w in widths.items():
+            self.tree.column(c, width=w)
+        if self._fit_after is None:
+            self._fit_after = self.root.after(FIT_DELAY_MS, self._refit_rows)
+            self._after_ids.add(self._fit_after)
+
+    def _refit_rows(self) -> None:
+        self._after_ids.discard(self._fit_after)
+        self._fit_after = None
+        for iid, values in self.full_rows.items():
+            if self.tree.exists(iid):
+                self.tree.item(iid, values=self._fit_values(values))
+
+    def _fit_values(self, values: tuple) -> tuple:
+        if not self.col_widths:
+            return values
+        return tuple(self._fit(str(v), self.col_widths[c] - px(CELL_PAD), middle=c == "name")
+                     for c, v in zip(COLUMN_NAMES, values))
+
+    def _fit(self, text: str, width: int, middle: bool = False) -> str:
+        """`text` cut to `width` screen px with an ellipsis: in the middle for a file name (its
+        folder and its ending both stay), at the end for the rest."""
+        key = (text, width, middle)
+        hit = self._fit_cache.get(key)
+        if hit is not None:
+            return hit
+        if not text or self._measure(text, self.f_body) <= width:
+            out = text
+        else:
+            def cut(n: int) -> str:
+                if middle:
+                    return text[:(n + 1) // 2].rstrip() + ELLIPSIS + text[len(text) - n // 2:].lstrip()
+                return text[:n].rstrip() + ELLIPSIS
+
+            lo, hi = 0, len(text) - 1  # characters kept
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if self._measure(cut(mid), self.f_body) <= width:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            out = cut(lo)
+        if len(self._fit_cache) > 20000:
+            self._fit_cache = {}
+        self._fit_cache[key] = out
+        return out
+
+    def cell_tip(self, iid: str, column: str) -> str:
+        """The whole text of a shortened cell ("" when the cell shows all of it)."""
+        full = self.full_rows.get(iid)
+        if not full or column not in COLUMN_NAMES or not self.tree.exists(iid):
+            return ""
+        whole = str(full[COLUMN_NAMES.index(column)])
+        return whole if self.tree.set(iid, column) != whole else ""
+
+    def _on_tree_motion(self, event) -> None:
+        iid, col = self.tree.identify_row(event.y), self.tree.identify_column(event.x)
+        text = self.cell_tip(iid, self.tree.column(col, "id")) if iid and col else ""
+        self._show_tip(text, event.x_root, event.y_root)
+
+    def _show_tip(self, text: str, x: int = 0, y: int = 0) -> None:
+        if not text:
+            if self.tip is not None and self.tip.winfo_exists():
+                self.tip.withdraw()
+            return
+        C = theme.COLORS
+        if self.tip is None or not self.tip.winfo_exists():
+            self.tip = tk.Toplevel(self.root)
+            self.tip.withdraw()
+            self.tip.overrideredirect(True)
+            tk.Label(self.tip, bg=C["surface"], fg=C["text"], bd=1, relief="solid", justify="left",
+                     padx=px(6), pady=px(3), wraplength=px(520)).pack()
+        label = self.tip.winfo_children()[0]
+        label.configure(text=text, font=self.f_small)
+        self.tip.geometry(f"+{x + px(12)}+{y + px(18)}")
+        self.tip.deiconify()
+        self.tip.lift()
 
     def _refresh_info(self) -> None:
         """The result card: big before -> after, the percentage, the details."""
