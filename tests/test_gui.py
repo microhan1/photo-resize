@@ -204,7 +204,7 @@ def test_no_text_is_cut_off_at_the_smallest_window(root, make_app, folder, lang)
     app._on_update_result(update_check.UpdateInfo("9.9.9", "0.1.0", update_check.SITE + "tools/photoresize"), True)
     pump(root, timeout=0.5)
     widgets = [app.btn_run, app.btn_cancel, app.btn_open, app.btn_files, app.btn_folder, app.btn_clear,
-               app.chk_png, app.chk_update, app.chk_recursive]
+               app.chk_png, app.chk_update, app.chk_recursive, app.lnk_feedback]
     for group in app.chip_groups + [app.zoom_chips]:
         widgets += list(group.chips.values())
     cut = [w.cget("text") for w in widgets if w.winfo_width() < w.winfo_reqwidth()]

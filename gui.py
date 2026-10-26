@@ -22,7 +22,7 @@ import threading
 import tkinter as tk
 import tkinter.font as tkfont
 import webbrowser
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import i18n
 import prefs as prefs_mod
@@ -287,6 +287,7 @@ class App:
         style.configure("Promise.TLabel", foreground=theme.COLORS["ok_text"], font=self.f_small)
         style.configure("Err.TLabel", foreground=theme.COLORS["err"], font=self.f_small)
         style.configure("Big.Accent.TButton", font=self.f_bold, padding=(px(12), px(8)))
+        style.configure("Link.TLabel", foreground=theme.COLORS["accent"], font=(*self.f_body, "underline"))
         self.root.option_add("*TCombobox*Listbox.font", self.f_body)
 
     # -------------------------------------------------------------- building
@@ -342,6 +343,10 @@ class App:
         self.chk_update = ttk.Checkbutton(right, text=t("opt_update_check"), variable=self.v_update,
                                           command=self._on_update_toggle)
         self.chk_update.pack(side="right", padx=(0, P * 2))
+        # a small link, not a button: it only opens the tools page's feedback box in the browser
+        self.lnk_feedback = ttk.Label(right, text=t("btn_feedback"), style="Link.TLabel", cursor="hand2")
+        self.lnk_feedback.pack(side="right", padx=(0, P * 2))
+        self.lnk_feedback.bind("<Button-1>", lambda e: self.send_feedback())
         ttk.Label(head, text=t("app_title"), font=self.f_title).pack(side="left")
         ttk.Label(head, text=t("app_tagline"), style="Muted.TLabel").pack(side="left", padx=(P * 2, 0),
                                                                           pady=(px(4), 0))
@@ -1162,6 +1167,22 @@ class App:
             except Exception:
                 pass
         self._hide_update_notice()
+
+    # -------------------------------------------------------------- feedback
+    def send_feedback(self) -> None:
+        """The feedback box on the tools page, in the browser; nothing is sent from here.
+        When no browser opens, a message box shows the address to copy (Ctrl+C copies a
+        Windows message box's text)."""
+        url = update_check.feedback_url(update_check.SLUG, APP_VERSION, i18n.current_lang())
+        try:
+            opened = webbrowser.open(url)
+        except Exception:  # webbrowser.Error, OSError: the program carries on
+            opened = False
+        if not opened:
+            try:
+                messagebox.showwarning(t("app_title"), t("err_feedback_open", url=url), parent=self.root)
+            except tk.TclError:
+                pass
 
     def _update_later(self) -> None:
         if self._update_info is not None:

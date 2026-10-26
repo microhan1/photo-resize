@@ -11,7 +11,8 @@ libheif that remain are **LGPL-3.0**; how this exe meets the LGPL is explained b
 없어 **GPLv2인 x265는 exe에 들어 있지 않습니다**. 남는 libheif·libde265는 **LGPL-3.0**이며,
 이 exe가 LGPL 조건을 지키는 방법은 아래에 적었습니다.
 
-Versions are those of the v0.1.0 build (2026-10-16), read from the installed packages.
+Versions are those of the v0.1.0 build (2026-10-16), read from the installed packages;
+the v0.1.1 build (2026-10-26) carries the same versions (checked again).
 
 ## pi-heif 1.4.0 and the libraries in its Windows wheel
 

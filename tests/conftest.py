@@ -37,6 +37,14 @@ def _no_network(req, timeout=None, *a, **k):
     raise urllib.error.URLError("blocked by tests/conftest.py: tests never reach a server")
 
 
+def _no_browser(url, *a, **k):
+    """No test opens a real browser: [Send feedback] and [Update] tests fake webbrowser.open
+    themselves. Answers "opened" so a forgotten fake fails here, not on a message box."""
+    attempts.append(f"browser {url}")
+    total_attempts.append(f"browser {url}")
+    return True
+
+
 def _is_local(address) -> bool:
     host = address[0] if isinstance(address, tuple) and address else str(address)
     return host in ("127.0.0.1", "::1", "localhost")
@@ -65,8 +73,11 @@ def _guard_create_connection(address, *a, **k):
 @pytest.fixture(autouse=True)
 def no_outside_calls(monkeypatch):
     import urllib.request
+    import webbrowser
 
     monkeypatch.setitem(_uc.check_async.__kwdefaults__, "fetcher", _no_fetch)
+    for name in ("open", "open_new", "open_new_tab"):
+        monkeypatch.setattr(webbrowser, name, _no_browser)
     monkeypatch.setitem(_uc.fetch.__kwdefaults__, "opener", _no_network)
     monkeypatch.setattr(urllib.request, "urlopen", _no_network)
     monkeypatch.setattr(socket.socket, "connect", _guard_connect)

@@ -44,6 +44,21 @@ def page_url(info: UpdateInfo, lang: str) -> str:
     return info.url
 
 
+FEEDBACK_PAGE = SITE + "{prefix}tools/{slug}?utm_source=app&utm_medium=feedback{version}#feedback"
+FEEDBACK_EN = ("en", "ja", "zh-cn")  # the site has no Japanese or Chinese page: the English one
+
+
+def feedback_url(slug: str, version: str | None, lang: str | None) -> str:
+    """The tools page's "Send feedback" box (#feedback), opened in the browser by the
+    [Send feedback] link: nothing is sent from the program. Built from constants only;
+    utm_source=app makes the site count it as the Windows program. The version is
+    percent-encoded and left out when empty; an unknown language gets the Korean page."""
+    code = (lang or "").strip().lower().replace("_", "-")
+    prefix = "en/" if code in FEEDBACK_EN else ""
+    v = f"&v={urllib.parse.quote(version, safe='')}" if version and version.strip() else ""
+    return FEEDBACK_PAGE.format(prefix=prefix, slug=slug, version=v)
+
+
 def today() -> str:
     return datetime.date.today().isoformat()
 

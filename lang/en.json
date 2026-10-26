@@ -114,5 +114,7 @@
   "info_pct": "{percent}% smaller · {count} photos",
   "info_estimate_note": "Estimated from {n} of {total} photos really shrunk",
   "st_expected": "{text} (expected)",
-  "info_estimate_exact": "Every photo really shrunk (nothing saved yet)"
+  "info_estimate_exact": "Every photo really shrunk (nothing saved yet)",
+  "btn_feedback": "Send feedback",
+  "err_feedback_open": "Could not open a browser. Paste the address below into your browser's address bar; no sign-in is needed (Ctrl+C copies the text of this window).\n\n{url}"
 }

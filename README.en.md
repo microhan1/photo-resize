@@ -80,6 +80,14 @@ When a newer version exists, one line appears at the bottom of the window. **Upd
 
 *Picture: the notice line, shown with a faked server answer (new version 0.2.0).*
 
+## Feedback
+
+Tell us what's broken or missing with **Send feedback** (top right of the window) or at <https://chaekgalpi.co.kr/en/tools/photoresize#feedback> — no sign-in needed. The link only opens that page in your browser; the program itself sends nothing (the address carries the program's version). [GitHub Issues](https://github.com/microhan1/photo-resize/issues) are welcome too.
+
+![Send feedback at the top right](docs/feedback_link.png)
+
+*Picture: the top right of the window (Korean screen): Send feedback (의견 보내기), Check for updates, language.*
+
 ## What it does not do
 
 - No videos.

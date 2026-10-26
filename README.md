@@ -80,6 +80,14 @@ python main.py D:\사진 --mode quality --quality medium --no-recursive
 
 *그림: 알림 줄 화면. 서버 응답을 가짜(새 버전 0.2.0)로 넣어 띄운 시험 화면입니다.*
 
+## 의견 보내기
+
+안 되는 것·불편한 것·바라는 기능은 프로그램 오른쪽 위 **의견 보내기**를 누르거나 <https://chaekgalpi.co.kr/tools/photoresize#feedback> 에서 로그인 없이 보낼 수 있습니다. 누르면 브라우저로 그 페이지가 열릴 뿐, 프로그램이 직접 보내는 것은 없습니다(열리는 주소에 프로그램 버전이 붙습니다). [GitHub Issues](https://github.com/microhan1/photo-resize/issues)도 그대로 받습니다.
+
+![창 오른쪽 위의 의견 보내기](docs/feedback_link.png)
+
+*그림: 창 오른쪽 위. 「의견 보내기」 · 「새 버전 확인」 · 언어 선택.*
+
 ## 하지 않는 것
 
 - 동영상은 줄이지 않습니다.
