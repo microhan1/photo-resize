@@ -188,6 +188,8 @@ def test_a_third_language_is_just_a_file(root, make_app, tmp_path, monkeypatch):
     res = tmp_path / "res"
     shutil.copytree(os.path.join(ROOT, "lang"), res / "lang")
     shutil.copytree(os.path.join(ROOT, "assets"), res / "assets")
+    for code in ("ja", "zh-CN"):  # the real ones: this test adds a language from scratch
+        (res / "lang" / f"{code}.json").unlink()
     ja = json.load(open(res / "lang" / "en.json", encoding="utf-8"))
     ja["app_title"] = "写真の容量を減らす"
     json.dump(ja, open(res / "lang" / "ja.json", "w", encoding="utf-8"), ensure_ascii=False)

@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" width="96" alt="icon">
 
-[한국어](README.md)
+[한국어](README.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
 > **Your photos never leave your PC.** Everything happens locally (except the update check — tool name and version only, once a day, can be turned off).
 > **Originals are never changed.** Results are new files in a `_small` folder.
@@ -68,7 +68,7 @@ python main.py D:\Photos\a.jpg D:\Photos\b.heic --mode size --size 1920 --output
 python main.py D:\Photos --mode quality --quality medium --no-recursive
 ```
 
-Options: `--mode target|size|quality`, `--target 500KB`, `--size 1920`, `--quality high|medium|low|60-95`, `--output folder|suffix`, `--keep-png`, `--no-recursive`, `--lang ko|en`, `--version`. Exit codes: 0 success, 1 some photos failed, 2 nothing to shrink.
+Options: `--mode target|size|quality`, `--target 500KB`, `--size 1920`, `--quality high|medium|low|60-95`, `--output folder|suffix`, `--keep-png`, `--no-recursive`, `--lang ko|en|zh-CN|ja`, `--version`. Exit codes: 0 success, 1 some photos failed, 2 nothing to shrink.
 
 ## Update check
 

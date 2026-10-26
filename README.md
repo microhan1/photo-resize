@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" width="96" alt="icon">
 
-[English](README.en.md)
+[English](README.en.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
 > **사진은 어디에도 올라가지 않습니다.** 내 PC 안에서만 줄입니다(새 버전 확인만 예외 — 도구 이름·버전만, 하루 한 번, 끌 수 있음).
 > **원본은 그대로 둡니다.** 결과는 `_small` 폴더에 새로 만듭니다.
@@ -68,7 +68,7 @@ python main.py D:\사진\a.jpg D:\사진\b.heic --mode size --size 1920 --output
 python main.py D:\사진 --mode quality --quality medium --no-recursive
 ```
 
-옵션: `--mode target|size|quality`, `--target 500KB`, `--size 1920`, `--quality high|medium|low|60~95`, `--output folder|suffix`, `--keep-png`, `--no-recursive`, `--lang ko|en`, `--version`. 종료 코드: 0 성공, 1 일부 실패, 2 줄일 사진 없음.
+옵션: `--mode target|size|quality`, `--target 500KB`, `--size 1920`, `--quality high|medium|low|60~95`, `--output folder|suffix`, `--keep-png`, `--no-recursive`, `--lang ko|en|zh-CN|ja`, `--version`. 종료 코드: 0 성공, 1 일부 실패, 2 줄일 사진 없음.
 
 ## 새 버전 확인
 
