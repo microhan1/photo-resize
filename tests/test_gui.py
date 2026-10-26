@@ -73,6 +73,16 @@ def wait_estimate(root, app):
     assert pump(root, lambda: bool(app.measured), timeout=60)
 
 
+def assert_estimate_text(app):
+    """The result card says "about" while some photos are only guessed, never once all are measured."""
+    big = app.lbl_big.cget("text")
+    assert "%" in app.lbl_pct.cget("text")
+    if len(app.measured) < len(app.items):
+        assert "→ about" in big
+    else:
+        assert "→" in big and "about" not in big
+
+
 def wait_run(root, app):
     assert pump(root, lambda: not app.running, timeout=120)
 
@@ -82,8 +92,20 @@ def test_add_estimate_run_summary(root, make_app, folder):
     before = snapshot(folder)
     app = make_app([str(folder)])
     assert len(app.items) == 7 and len(app.tree.get_children()) == 7
+    # The first estimate on screen may already be exact: on a busy PC the window's first
+    # update takes seconds and both snapshots arrive together (LESSONS L11). Check the text
+    # that fits what is measured, not which snapshot came first.
     wait_estimate(root, app)
-    assert "→ about" in app.lbl_big.cget("text") and "%" in app.lbl_pct.cget("text")
+    assert_estimate_text(app)
+    assert pump(root, lambda: len(app.measured) == len(app.items), timeout=90)
+    assert_estimate_text(app)
+    # The "about" line without timing: a partial estimate handed over as the worker does.
+    part = dict(list(app.measured.items())[:3])
+    guessed = shrink.guess_sizes(app.items, part, app.prefs.options().validated())
+    app.queue.put(("estimate", app.est_gen, (part, guessed)))
+    assert pump(root, lambda: len(app.measured) == 3, timeout=5)
+    assert_estimate_text(app)
+    assert app.lbl_detail.cget("text") == i18n.t("info_estimate_note", n=3, total=7)
     assert snapshot(folder) == before  # nothing written before [Shrink]
     app.run()
     assert app.running and str(app.btn_cancel.cget("state")) == "normal"
