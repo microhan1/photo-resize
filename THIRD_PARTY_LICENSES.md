@@ -12,7 +12,8 @@ libheif that remain are **LGPL-3.0**; how this exe meets the LGPL is explained b
 이 exe가 LGPL 조건을 지키는 방법은 아래에 적었습니다.
 
 Versions are those of the v0.1.0 build (2026-10-16), read from the installed packages;
-the v0.1.1 build (2026-10-26) carries the same versions (checked again).
+the v0.1.1 build (2026-10-26) carries the same versions (checked again), and so does
+the v0.1.2 build (2026-10-27, checked again).
 
 ## pi-heif 1.4.0 and the libraries in its Windows wheel
 
