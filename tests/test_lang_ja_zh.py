@@ -250,22 +250,42 @@ def test_nothing_is_cut_or_overlapping(root, make_app, folder, lang, size):
     assert cut_off(app) == []
     assert header_problems(app) == []
     assert heading_problems(app) == []
+    assert column_problems(app) == []
     assert app.chk_png.winfo_ismapped() and app.btn_run.winfo_ismapped()
     notice = app.update_area.winfo_children()[0]
     assert all(w.winfo_width() >= w.winfo_reqwidth() for w in notice.winfo_children()
                if w.winfo_class() in ("TButton", "Button"))
 
 
-@pytest.mark.xfail(strict=True, reason="v0.1.1 layout, every language: the columns add up to 726 design px but "
-                   "the list is about 620 wide at the smallest window, so the status column is off the right edge "
-                   "(no horizontal scroll). Left as it is in this language-only change; see the hub report.")
+def column_problems(app):
+    """Every column is inside the table (there is no sideways scroll bar) and the longest
+    status of this language fits its column. Up to v0.1.1 the columns added up to 726 design
+    px against a table about 560-620 wide at the smallest window: the status column was off
+    the right edge in every language."""
+    problems = []
+    widths = [int(app.tree.column(c, "width")) for c in app.tree["columns"]]
+    if sum(widths) > app.tree.winfo_width():
+        problems.append(("columns", sum(widths), app.tree.winfo_width()))
+    font = tkfont.Font(root=app.root, font=app.f_body)
+    longest = [f"{gui.CHECK} " + i18n.t("st_expected", text=i18n.t("st_done_q", q=95))]
+    longest += [f"{gui.CROSS} " + i18n.t(k) for k in ("st_over_none", "st_small", "st_cancelled")]
+    status_width = int(app.tree.column("status", "width"))
+    problems += [("status", s) for s in longest if font.measure(s) + gui.px(12) > status_width]
+    return problems
+
+
 @pytest.mark.parametrize("lang", ALL)
 def test_the_status_column_shows_at_the_smallest_window(root, make_app, folder, lang):
     i18n.set_lang(lang, persist=False)
     app = make_app([str(folder)], size=theme.WINDOW_MIN)
-    pump(root, timeout=0.5)
-    widths = sum(int(app.tree.column(c, "width")) for c in app.tree["columns"])
-    assert widths <= app.tree.winfo_width()
+    wait_estimate(root, app)
+    pump(root, timeout=0.3)
+    assert column_problems(app) == []
+    x, y, w, h = app.tree.bbox("0", "status")  # the first row's status cell is on screen
+    assert w > 0 and x + w <= app.tree.winfo_width()
+    font = tkfont.Font(root=root, font=app.f_body)
+    for iid in app.tree.get_children():
+        assert font.measure(app.tree.set(iid, "status")) < int(app.tree.column("status", "width")), lang
 
 
 @pytest.fixture
@@ -285,6 +305,7 @@ def test_smallest_window_at_100_percent(root, make_app, folder, scale_100, lang)
     app = make_app([str(folder)], size=theme.WINDOW_MIN)
     pump(root, timeout=0.5)
     assert cut_off(app) == [] and header_problems(app) == [] and heading_problems(app) == []
+    assert column_problems(app) == []
     assert app.btn_run.winfo_ismapped()
 
 
@@ -304,6 +325,7 @@ def test_smallest_window_at_150_percent(root, make_app, folder, scale_150, lang)
     app = make_app([str(folder)], size=theme.WINDOW_MIN)
     pump(root, timeout=0.5)
     assert cut_off(app) == [] and header_problems(app) == [] and heading_problems(app) == []
+    assert column_problems(app) == []
     assert app.btn_run.winfo_ismapped()
 
 

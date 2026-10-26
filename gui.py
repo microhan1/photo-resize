@@ -56,8 +56,10 @@ ESTIMATE_DELAY_MS = 350
 PREVIEW_DELAY_MS = 150
 ESTIMATE_SAMPLE = 12
 ZOOMS = ("fit", 1.0, 2.0, 4.0)
-COLUMNS = (("name", 280, True, "w"), ("before", 84, False, "e"), ("after", 92, False, "e"),
-           ("pixels", 120, False, "center"), ("status", 150, False, "w"))
+# The fixed columns fit their longest text in all four languages; the name column starts
+# small and takes whatever is left, so all five fit the smallest window (about 560 px wide).
+COLUMNS = (("name", 100, True, "w"), ("before", 72, False, "e"), ("after", 80, False, "e"),
+           ("pixels", 92, False, "center"), ("status", 190, False, "w"))
 CUSTOM = "custom"
 
 
