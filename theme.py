@@ -7,6 +7,7 @@ COLORS = {
     "accent": "#005FB8", "band": "#F3F6FD", "ok": "#16A34A", "warn": "#B45309", "err": "#DC2626",
     "canvas": "#F1F3F6", "stripe": "#F7F8FA", "drop_line": "#A9B4C6", "band_line": "#D6E0F5",
     "chip_line": "#D0D5DD", "chip_hover": "#EEF3FB", "ok_text": "#3F6B4F",
+    "link_focus": "#D6E0F5",  # behind the [Send feedback] link while it has the keyboard focus
 }
 STATUS_COLORS = {"done": "#16A34A", "over": "#B45309", "small": "#6B7280", "failed": "#DC2626",
                  "cancelled": "#6B7280", "wait": "#6B7280"}

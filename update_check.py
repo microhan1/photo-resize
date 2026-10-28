@@ -19,6 +19,8 @@ import urllib.parse
 import urllib.request
 from typing import Callable
 
+from i18n import DEFAULT_LANG
+
 SLUG = "photoresize"  # the tool's name on the 책갈피 tools site
 API = "https://chaekgalpi.co.kr/api/tools/{slug}/latest"
 SITE = "https://chaekgalpi.co.kr/"  # the notice only ever opens a page on this site
@@ -36,25 +38,33 @@ class UpdateInfo:
     url_en: str = ""  # the English tools page (server `urlEn`), only when it is on the tools site
 
 
-def page_url(info: UpdateInfo, lang: str) -> str:
+def is_korean_page(lang: str | None) -> bool:
+    """The one rule for which page of the tools site a screen language gets, shared by
+    [Update] and [Send feedback]: a code whose first part is "ko" (ko, KO, ko-KR, ko_KR)
+    gets the Korean page; every other code, listed or not (en, ja, zh, zh-TW, fr, xx),
+    gets the English one (the site has no Japanese or Chinese page). None, empty or not
+    a string means this tool's default screen language (i18n.DEFAULT_LANG)."""
+    code = lang.strip().lower().replace("_", "-") if isinstance(lang, str) else ""
+    return (code or DEFAULT_LANG.lower()).split("-")[0] == "ko"
+
+
+def page_url(info: UpdateInfo, lang: str | None) -> str:
     """The page [Update] opens: the Korean page for a Korean screen, the English page for
     every other language when the server gave one, otherwise the Korean page."""
-    if lang != "ko" and info.url_en:
+    if not is_korean_page(lang) and info.url_en:
         return info.url_en
     return info.url
 
 
 FEEDBACK_PAGE = SITE + "{prefix}tools/{slug}?utm_source=app&utm_medium=feedback{version}#feedback"
-FEEDBACK_EN = ("en", "ja", "zh-cn")  # the site has no Japanese or Chinese page: the English one
 
 
 def feedback_url(slug: str, version: str | None, lang: str | None) -> str:
     """The tools page's "Send feedback" box (#feedback), opened in the browser by the
     [Send feedback] link: nothing is sent from the program. Built from constants only;
     utm_source=app makes the site count it as the Windows program. The version is
-    percent-encoded and left out when empty; an unknown language gets the Korean page."""
-    code = (lang or "").strip().lower().replace("_", "-")
-    prefix = "en/" if code in FEEDBACK_EN else ""
+    percent-encoded and left out when empty; the page follows is_korean_page."""
+    prefix = "" if is_korean_page(lang) else "en/"
     v = f"&v={urllib.parse.quote(version, safe='')}" if version and version.strip() else ""
     return FEEDBACK_PAGE.format(prefix=prefix, slug=slug, version=v)
 

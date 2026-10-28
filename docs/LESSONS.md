@@ -82,3 +82,10 @@
 - 함정: `tkfont.Font(font=설명)`으로 만든 이름 글꼴은 `font measure 설명`과 2~3px 다르게 잰다. 표는 스타일의 글꼴 설명으로 그리므로 재는 쪽도 `root.tk.call("font", "measure", 설명, 글)`로 같게 한다. 또 `tkfont.Font` 객체를 App에 쥐고 있으면 작업 스레드의 gc에서 지워질 수 있어(L1) 쥐지 않는다.
 - 함정: `samples/make_samples.py`는 만들 때마다 바이트가 달라진다. "결과 파일이 이전 판과 같은가"는 한 번 만든 표본을 두 판에 똑같이 복사해 비교한다(이번: 3가지 방법 19개 결과 SHA-1 모두 같음).
 - 재발 방지: `tests/test_table_columns.py` — 최소·기본 × 4개 언어 × 100·150%, 200자 이름(한글·일본어·이모지)과 300자 오류 문구, 최소→기본→최대화→최소 왕복과 37px씩 끌기, 실행 중 언어 바꾸기, 0·1·500장. L12의 `column_problems` 시험(4개 언어 × 크기 × 배율)도 이 계산으로 그대로 통과한다.
+
+## L14. 키보드 시험이 사장님 타자를 가로채지 않게 (2026-10-28)
+- 상황: 「의견 보내기」를 Tab·Enter·Space 로 쓸 수 있게 하고(허브 3차 카드) 시험을 쓰는데, 지시는 「실제 키 이벤트로 사장님 타자를 가로채지 않게」였다.
+- 함정 1: Tk 는 `event_generate("<Return>")` 같은 **만든 키 이벤트도 그 프로그램이 키보드를 쥐고 있을 때만** 전한다(그렇지 않으면 버린다). 그래서 다른 시리즈 시험은 `focus_force()` 로 키보드를 가져왔는데, 그 순간 사장님이 다른 창에서 치던 글자가 시험 창으로 간다.
+- 함정 2: Tk 8.6 의 Tab·Shift+Tab 은 `<Tab>` 이 아니라 가상 이벤트 `<<NextWindow>>`·`<<PrevWindow>>` 에 묶여 있다. `bind all <Tab>` 은 비어 있다.
+- 해결: `tests/test_feedback_followup.py` 의 `run_binding` 이 키 이벤트 없이 Tk 가 돌릴 바인딩 스크립트를 bindtags 순서대로 직접 돌린다(%-자리는 채우고 break 면 멈춤). Tab 순서는 `tk_focusNext`/`tk_focusPrev`, 초점 표시는 `<FocusIn>`/`<FocusOut>` 를 그 위젯에 만들어 본다(키 이벤트가 아니라 항상 전해짐). `focus_force` 는 쓰지 않는다.
+- 함께 바뀐 규칙: 열리는 페이지 언어는 `update_check.is_korean_page` 하나로 정한다(언어 코드 첫 부분이 ko 면 한국어 페이지, 그 밖의 모든 코드는 영어 페이지, None·빈 값은 기본 화면 언어 en). v0.1.2 까지는 목록에 없는 코드·None 이 한국어 페이지였다.

@@ -116,5 +116,6 @@
   "st_expected": "{text} (expected)",
   "info_estimate_exact": "Every photo really shrunk (nothing saved yet)",
   "btn_feedback": "Send feedback",
+  "tip_feedback": "Tell us what's broken or missing (opens your browser)",
   "err_feedback_open": "Could not open a browser. Paste the address below into your browser's address bar; no sign-in is needed (Ctrl+C copies the text of this window).\n\n{url}"
 }

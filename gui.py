@@ -202,6 +202,102 @@ class ChipGroup:
         self.refresh()
 
 
+class Tooltip:
+    """A small note under a widget while the mouse rests on it (DELAY_MS). It holds
+    the widget and a language key only, never the App, and reads the text each time it is
+    shown, so a language change reaches it. Leaving, clicking or destroying the widget
+    hides it. The note is kept inside the widget's window and, where the window is on the
+    screen, inside the screen too."""
+
+    DELAY_MS = 450
+    GAP = 4  # design px between the widget and the note
+
+    def __init__(self, widget: tk.Misc, key: str) -> None:
+        self.widget, self.key = widget, key
+        self.tip: tk.Toplevel | None = None
+        self.label: tk.Label | None = None
+        self._job: str | None = None
+        widget.bind("<Enter>", self._schedule, add="+")
+        widget.bind("<Leave>", self.hide, add="+")
+        # <Button-1> too: the widget's own <Button-1> binding is more specific than
+        # <ButtonPress>, and Tk runs only the most specific one
+        widget.bind("<ButtonPress>", self.hide, add="+")
+        widget.bind("<Button-1>", self.hide, add="+")
+        widget.bind("<Destroy>", self.hide, add="+")
+
+    def _schedule(self, _event=None) -> None:
+        self._cancel()
+        try:
+            self._job = self.widget.after(self.DELAY_MS, self.show)
+        except tk.TclError:  # the window is going away
+            self._job = None
+
+    def _cancel(self) -> None:
+        if self._job is not None:
+            try:
+                self.widget.after_cancel(self._job)
+            except tk.TclError:
+                pass
+            self._job = None
+
+    def show(self) -> None:
+        self._job = None
+        C = theme.COLORS
+        if self.tip is None:
+            try:
+                tip = tk.Toplevel(self.widget, background=C["text"])
+            except tk.TclError:  # the window is going away
+                return
+            tip.withdraw()
+            tip.wm_overrideredirect(True)
+            self.label = tk.Label(tip, bg=C["surface"], fg=C["text"], justify="left", padx=px(6), pady=px(3),
+                                  wraplength=px(480), font=tkfont.nametofont("TkDefaultFont", root=tip))
+            self.label.pack(padx=1, pady=1)
+            self.tip = tip
+        self.label.configure(text=t(self.key))  # TkDefaultFont: the screen language's font (_fonts)
+        self._place()
+        self.tip.deiconify()
+        self.tip.lift()
+
+    def place(self) -> tuple[int, int]:
+        """Where the note goes: under the widget, its left edge at the widget's, moved left
+        or above (no room below) so it stays inside the window and the screen."""
+        tip, w = self.tip, self.widget
+        tip.update_idletasks()
+        tw, th = tip.winfo_reqwidth(), tip.winfo_reqheight()
+        top = w.winfo_toplevel()
+        left, upper = top.winfo_rootx(), top.winfo_rooty()
+        right, lower = left + top.winfo_width(), upper + top.winfo_height()
+        sw, sh = w.winfo_screenwidth(), w.winfo_screenheight()
+        if left < sw and right > 0:  # the window is (partly) on this screen: the screen limits too
+            left, right = max(left, 0), min(right, sw)
+        if upper < sh and lower > 0:
+            upper, lower = max(upper, 0), min(lower, sh)
+        x = max(left, min(w.winfo_rootx(), right - tw))
+        y = w.winfo_rooty() + w.winfo_height() + px(self.GAP)
+        if y + th > lower:  # no room below: above the widget instead
+            y = max(upper, w.winfo_rooty() - px(self.GAP) - th)
+        return x, y
+
+    def _place(self) -> None:
+        x, y = self.place()
+        self.tip.wm_geometry(f"+{x}+{y}")
+
+    def refresh(self) -> None:
+        """A note that is open now shows the current language's text."""
+        if self.tip is not None:
+            self.show()
+
+    def hide(self, _event=None) -> None:
+        self._cancel()
+        if self.tip is not None:
+            try:
+                self.tip.destroy()
+            except tk.TclError:
+                pass
+            self.tip = self.label = None
+
+
 # ------------------------------------------------------------------ the window
 class App:
     def __init__(self, root: tk.Misc, paths: list[str] | None = None, prefs: prefs_mod.Prefs | None = None):
@@ -305,6 +401,8 @@ class App:
     def _build(self) -> None:
         """(Re)build every widget: at start and when the language changes. All state lives
         in the App and the prefs, so nothing is lost."""
+        tip = getattr(self, "tip_feedback", None)
+        tip_open = tip is not None and tip.tip is not None  # shown again in the new language
         for w in list(self.root.winfo_children()):
             if not isinstance(w, tk.Toplevel):
                 w.destroy()
@@ -338,6 +436,8 @@ class App:
         self._show_status(self.status[0], **self.status[1])
         if self._update_info is not None:
             self._show_update_notice()
+        if tip_open:
+            self.tip_feedback.show()
 
     def _build_header(self, outer) -> None:
         P = px(theme.PAD)
@@ -356,9 +456,18 @@ class App:
                                           command=self._on_update_toggle)
         self.chk_update.pack(side="right", padx=(0, P * 2))
         # a small link, not a button: it only opens the tools page's feedback box in the browser
-        self.lnk_feedback = ttk.Label(right, text=t("btn_feedback"), style="Link.TLabel", cursor="hand2")
+        self.lnk_feedback = ttk.Label(right, text=t("btn_feedback"), style="Link.TLabel", cursor="hand2",
+                                      takefocus=True)
         self.lnk_feedback.pack(side="right", padx=(0, P * 2))
         self.lnk_feedback.bind("<Button-1>", lambda e: self.send_feedback())
+        # Tab reaches it (takefocus) and Enter or Space opens it like a click
+        for seq in ("<Return>", "<KP_Enter>", "<space>"):
+            self.lnk_feedback.bind(seq, lambda e: self.send_feedback() or "break")
+        # a ttk label draws no focus ring: a background shows the focus, the size stays
+        lnk = self.lnk_feedback
+        lnk.bind("<FocusIn>", lambda e: lnk.configure(background=theme.COLORS["link_focus"]))
+        lnk.bind("<FocusOut>", lambda e: lnk.configure(background=""))
+        self.tip_feedback = Tooltip(self.lnk_feedback, "tip_feedback")
         ttk.Label(head, text=t("app_title"), font=self.f_title).pack(side="left")
         ttk.Label(head, text=t("app_tagline"), style="Muted.TLabel").pack(side="left", padx=(P * 2, 0),
                                                                           pady=(px(4), 0))

@@ -99,7 +99,7 @@ python main.py D:\Photos --mode quality --quality medium --no-recursive
 ## シリーズ
 
 - Chaekgalpi Tools: [Photo Organizer](https://github.com/microhan1/photo-organizer) · [Music Folder Organizer](https://github.com/microhan1/music-folder-organizer) · [Music Tag Filler](https://github.com/microhan1/music-tag-filler)
-- [Chaekgalpi Library](https://chaekgalpi.co.kr/tools/photoresize?utm_source=github&utm_medium=referral&utm_campaign=tool_cta&utm_content=photoresize) — 読んだ本を記録するウェブサービス。
+- [Chaekgalpi Library](https://chaekgalpi.co.kr/en/tools/photoresize?utm_source=github&utm_medium=referral&utm_campaign=tool_cta&utm_content=photoresize) — 読んだ本を記録するウェブサービス。
 
 ## ライセンス
 

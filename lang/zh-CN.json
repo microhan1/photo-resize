@@ -116,5 +116,6 @@
   "st_expected": "{text}（预计）",
   "info_estimate_exact": "所有照片实际压缩后的大小（尚未保存）",
   "btn_feedback": "发送反馈",
+  "tip_feedback": "告诉我们问题或建议（将打开浏览器）",
   "err_feedback_open": "无法打开浏览器。请把下面的网址粘贴到浏览器地址栏，无需登录即可发送反馈（在此窗口按 Ctrl+C 可复制文字）。\n\n{url}"
 }
