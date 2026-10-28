@@ -445,20 +445,23 @@ class App:
         head.pack(fill="x")
         right = ttk.Frame(head)
         right.pack(side="right", anchor="n")
+        # created left to right, as they are seen, so Tab goes [Send feedback] -> [update
+        # check] -> [language] (Tk's Tab order is the creation order); packed from the left
+        # into a frame that is exactly as wide as the three, so the places are unchanged
+        # a small link, not a button: it only opens the tools page's feedback box in the browser
+        self.lnk_feedback = ttk.Label(right, text=t("btn_feedback"), style="Link.TLabel", cursor="hand2",
+                                      takefocus=True)
+        self.lnk_feedback.pack(side="left", padx=(0, P * 2))
+        self.v_update = tk.BooleanVar(value=self.prefs.update_check)
+        self.chk_update = ttk.Checkbutton(right, text=t("opt_update_check"), variable=self.v_update,
+                                          command=self._on_update_toggle)
+        self.chk_update.pack(side="left", padx=(0, P * 2))
         names = [i18n.LANG_NAMES.get(c, c) for c in i18n.LANGS]
         self.v_lang = tk.StringVar(value=i18n.LANG_NAMES.get(i18n.current_lang(), i18n.current_lang()))
         self.cb_lang = ttk.Combobox(right, textvariable=self.v_lang, values=names, state="readonly",
                                     width=max(len(n) for n in names) + 2, font=self.f_body)
-        self.cb_lang.pack(side="right")
+        self.cb_lang.pack(side="left")
         self.cb_lang.bind("<<ComboboxSelected>>", self._on_lang)
-        self.v_update = tk.BooleanVar(value=self.prefs.update_check)
-        self.chk_update = ttk.Checkbutton(right, text=t("opt_update_check"), variable=self.v_update,
-                                          command=self._on_update_toggle)
-        self.chk_update.pack(side="right", padx=(0, P * 2))
-        # a small link, not a button: it only opens the tools page's feedback box in the browser
-        self.lnk_feedback = ttk.Label(right, text=t("btn_feedback"), style="Link.TLabel", cursor="hand2",
-                                      takefocus=True)
-        self.lnk_feedback.pack(side="right", padx=(0, P * 2))
         self.lnk_feedback.bind("<Button-1>", lambda e: self.send_feedback())
         # Tab reaches it (takefocus) and Enter or Space opens it like a click
         for seq in ("<Return>", "<KP_Enter>", "<space>"):

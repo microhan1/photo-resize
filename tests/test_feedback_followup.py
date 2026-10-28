@@ -100,35 +100,58 @@ def test_the_link_takes_the_focus(root, make_app):
 
 
 def test_tab_order_reaches_the_link_and_back(root, make_app):
+    """The header in the order it is seen: [Send feedback] -> [update check] -> [language]."""
     app = make_app()
     root.update()
-    assert app.chk_update.tk_focusNext() is app.lnk_feedback
-    assert app.lnk_feedback.tk_focusPrev() is app.chk_update
-    after = app.lnk_feedback.tk_focusNext()
-    assert after is not app.lnk_feedback and after.tk_focusPrev() is app.lnk_feedback
+    assert app.lnk_feedback.tk_focusNext() is app.chk_update
+    assert app.chk_update.tk_focusNext() is app.cb_lang
+    assert app.cb_lang.tk_focusPrev() is app.chk_update
+    assert app.chk_update.tk_focusPrev() is app.lnk_feedback
+    before = app.lnk_feedback.tk_focusPrev()
+    assert before is not app.lnk_feedback and before.tk_focusNext() is app.lnk_feedback
+
+
+@pytest.mark.parametrize("lang", ALL)
+def test_tab_order_is_the_order_seen(root, make_app, lang):
+    """Left to right on the screen is the Tab order, in every language and at the smallest size."""
+    i18n.set_lang(lang, persist=False)
+    app = make_app(size=theme.WINDOW_MIN)
+    root.update()
+    seen = sorted((app.lnk_feedback, app.chk_update, app.cb_lang), key=lambda w: w.winfo_rootx())
+    assert seen == [app.lnk_feedback, app.chk_update, app.cb_lang]
+    assert [app.lnk_feedback.tk_focusNext(), app.chk_update.tk_focusNext()] == [app.chk_update, app.cb_lang]
 
 
 def test_tab_moves_the_focus_onto_the_link(root, make_app, browser):
     app = make_app()
-    app.chk_update.focus_set()
+    before = app.lnk_feedback.tk_focusPrev()
+    before.focus_set()
     root.update()
-    run_binding(app.chk_update, "<<NextWindow>>")  # what Tab is bound to
+    run_binding(before, "<<NextWindow>>")  # what Tab is bound to
     root.update()
     assert focused(app) is app.lnk_feedback
     assert browser.calls == []  # reaching it opens nothing
+    run_binding(app.lnk_feedback, "<<NextWindow>>")
+    root.update()
+    assert focused(app) is app.chk_update
+    run_binding(app.chk_update, "<<NextWindow>>")
+    root.update()
+    assert focused(app) is app.cb_lang and browser.calls == []
 
 
 def test_shift_tab_comes_back_to_the_link(root, make_app, browser):
     app = make_app()
-    after = app.lnk_feedback.tk_focusNext()
-    after.focus_set()
+    app.cb_lang.focus_set()
     root.update()
-    run_binding(after, "<<PrevWindow>>")
+    run_binding(app.cb_lang, "<<PrevWindow>>")
+    root.update()
+    assert focused(app) is app.chk_update
+    run_binding(app.chk_update, "<<PrevWindow>>")
     root.update()
     assert focused(app) is app.lnk_feedback
     run_binding(app.lnk_feedback, "<<PrevWindow>>")
     root.update()
-    assert focused(app) is app.chk_update and browser.calls == []
+    assert focused(app) is app.lnk_feedback.tk_focusPrev() and browser.calls == []
 
 
 def test_tab_and_shift_tab_are_the_next_and_previous_window_keys(root):
@@ -244,7 +267,7 @@ def test_the_link_is_still_a_link_after_a_language_change(root, make_app, browse
     switch(app, "ko")
     root.update()
     assert str(app.lnk_feedback.cget("takefocus")) in ("1", "True", "true")
-    assert app.chk_update.tk_focusNext() is app.lnk_feedback
+    assert app.lnk_feedback.tk_focusNext() is app.chk_update
     run_binding(app.lnk_feedback, "<Return>")
     assert browser.calls == [address("ko")]
 
