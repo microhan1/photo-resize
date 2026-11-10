@@ -3,6 +3,8 @@ rem Build photo-resize.exe (single file, no console) with PyInstaller.
 rem Usage: build.bat          -> dist\photo-resize.exe
 rem Before building: Get-Process photo-resize (do not overwrite an exe the user has open),
 rem and keep dist\settings.json if there is one.
+rem --splash shows assets\splash.png (drawn by assets\make_splash.py) while the exe unpacks;
+rem the program closes it once its window is drawn (splash.py).
 rem numpy is left out: Pillow and pi-heif only use it for array conversions this tool never does.
 rem HEIC is read with pi-heif (read-only, no x265); pillow-heif is kept out of the exe on purpose.
 setlocal
@@ -14,6 +16,7 @@ python -m pip install -r requirements.txt
 python -m PyInstaller --noconfirm --clean --onefile --windowed ^
   --name photo-resize ^
   --icon "assets\icon.ico" ^
+  --splash "assets\splash.png" ^
   --add-data "assets\icon.png;assets" ^
   --add-data "lang;lang" ^
   --add-data "LICENSE;." ^

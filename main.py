@@ -12,6 +12,7 @@ import sys
 import i18n
 import prefs as prefs_mod
 import shrink
+import splash
 import texts
 from i18n import t
 from version import APP_VERSION
@@ -138,14 +139,19 @@ def main(argv: list[str] | None = None) -> int:
 
         gui.launch([a for a in argv if not a.startswith("-")] or None)
         return 0
-    args = build_parser().parse_args(argv)
+    try:
+        args = build_parser().parse_args(argv)
+    except SystemExit:
+        splash.close()  # --version, --help or a bad argument: no window is coming
+        raise
     if args.lang:
         i18n.set_lang(args.lang, persist=False)
     if args.gui or not args.inputs:
         import gui
 
-        gui.launch(args.inputs or None)
+        gui.launch(args.inputs or None)  # closes the start-up picture once the window is drawn
         return 0
+    splash.close()  # the CLI prints instead of opening a window
     return run_cli(args)
 
 

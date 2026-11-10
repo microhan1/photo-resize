@@ -27,6 +27,7 @@ from tkinter import filedialog, messagebox, ttk
 import i18n
 import prefs as prefs_mod
 import shrink
+import splash
 import texts
 import theme
 import update_check
@@ -1195,8 +1196,6 @@ class App:
         """Both pictures at the same scale and the same place: the result is stretched back
         to the original's size, so one look shows what was lost."""
         self._redraw_after = None
-        from PIL import Image, ImageTk
-
         self._photos = []
         for cv in (self.cv_orig, self.cv_res):
             cv.delete("all")
@@ -1207,6 +1206,11 @@ class App:
                     cv.create_text(W // 2, H // 2, text=self.preview_hint, fill=theme.COLORS["muted"],
                                    font=self.f_small, width=W - px(32), justify="center")
             return
+        # Pillow is only needed once there is a picture to show: the first redraw (the hint,
+        # right after the window opens) must not pay for its import while the start-up
+        # picture is still up.
+        from PIL import Image, ImageTk
+
         orig, res, _ = self.preview
         if W < 4 or H < 4:
             return
@@ -1483,6 +1487,13 @@ def make_root() -> tk.Tk:
 
 
 def launch(paths: list[str] | None = None) -> None:
-    root = make_root()
-    App(root, paths)
+    try:
+        root = make_root()
+        App(root, paths)
+        # Draw the whole window first (update(), not update_idletasks(): the widgets paint on
+        # Expose events), then take the start-up picture away. Whatever runs in this first
+        # update keeps the picture up, so the first redraw of the preview stays light.
+        root.update()
+    finally:
+        splash.close()  # also when the window could not be made, so the error is not hidden behind it
     root.mainloop()

@@ -89,3 +89,13 @@
 - 함정 2: Tk 8.6 의 Tab·Shift+Tab 은 `<Tab>` 이 아니라 가상 이벤트 `<<NextWindow>>`·`<<PrevWindow>>` 에 묶여 있다. `bind all <Tab>` 은 비어 있다.
 - 해결: `tests/test_feedback_followup.py` 의 `run_binding` 이 키 이벤트 없이 Tk 가 돌릴 바인딩 스크립트를 bindtags 순서대로 직접 돌린다(%-자리는 채우고 break 면 멈춤). Tab 순서는 `tk_focusNext`/`tk_focusPrev`, 초점 표시는 `<FocusIn>`/`<FocusOut>` 를 그 위젯에 만들어 본다(키 이벤트가 아니라 항상 전해짐). `focus_force` 는 쓰지 않는다.
 - 함께 바뀐 규칙: 열리는 페이지 언어는 `update_check.is_korean_page` 하나로 정한다(언어 코드 첫 부분이 ko 면 한국어 페이지, 그 밖의 모든 코드는 영어 페이지, None·빈 값은 기본 화면 언어 en). v0.1.2 까지는 목록에 없는 코드·None 이 한국어 페이지였다.
+
+## L15. 시작 그림(splash)과 창이 다 그려지는 시간 (2026-11-10)
+- 상황: 허브 공통 지시서(시작 그림, TrimPDF 0fbec7c 모델)대로 `build.bat` 에 `--splash assets\splash.png` 를 더하고, `gui.launch` 에서 `App(...)` → `root.update()` → `splash.close()` 순서로 했다. 무거운 import 늦추기는 해당 없음 — PIL·pi-heif 는 처음부터 함수 안에서 불러 와서 `import gui` 때 적재되지 않는다(`tests/test_splash.py` 가 지킨다).
+- 처음 측정: 창이 보인 뒤 시작 그림이 2~8초 남았다(`tools/measure_startup.py`). 디버그 빌드 로그로 보니 `pyi_splash.close()` 는 1ms 이고 그 앞의 `root.update()` 가 exe 에서 1.5~3.3초였다. 다만 그때 다른 세션 4~5개가 같은 기계에서 exe 를 띄우고 있었다(CPU 50~60%).
+- 잘못 짚은 길: `update_idletasks()` 로 바꾸니 그림은 창이 보이자마자(0.1초) 닫혔지만, 그 순간의 창을 PrintWindow 로 찍어 보니 머리줄·카드 테두리만 있고 버튼·칩·표는 비어 있었다. 위젯 그리기는 Expose 이벤트로 오는데 `update_idletasks` 는 이벤트를 처리하지 않는다. 되돌렸다.
+- 실제: 첫 `update()` 를 프로파일하면(파이썬 0.56초) 파이썬 콜백은 0.11초(열 너비 글꼴 재기 32회)뿐이고 나머지는 Tk 가 창을 그리는 시간이다. 이 시간은 시작 그림이 있든 없든 같다 — 창이 먼저 빈 틀로 보이고 1초쯤 뒤에 내용이 채워지는 것은 전부터 그랬다. 시작 그림은 그 뒤에 닫히는 게 맞고(「창이 다 그려진 뒤」), 한가한 기계에서 전·후 번갈아 재면 창 3.8→4.0초, 그림 0.4초, 그림은 창이 보이고 1.0초 뒤 닫힘(그 순간의 창을 PrintWindow 로 찍어 다 그려져 있음을 확인). 미리보기 안내문만 그리는 첫 `_redraw` 는 PIL 을 import 하지 않게 옮겼다(필요할 때만).
+- 측정 함정 1: `tools/measure_startup.py` 는 창을 **제목이 아니라 제목 표시줄(WS_CAPTION) 유무**로 가른다. 시작 그림은 제목 `tk` 의 캡션 없는 Tk 창이라(처음 300×300 으로 나타났다가 그림 크기로 줄어든다) 제목·클래스로 찾는 점검 도구는 이것을 프로그램 창으로 집는다. 창 모습은 화면 캡처(ImageGrab)가 아니라 PrintWindow 로 찍는다 — 다른 세션의 창이 위에 있으면 그 창이 찍힌다.
+- 측정 함정 2: 다른 세션들이 같은 때에 exe 를 띄우면 숫자가 흔들린다. 전·후 exe 를 **한 도구 안에서 번갈아**(A→B→A→B) 재고 회마다 CPU 사용률을 같이 적는다. 1회째는 복사 직후의 차가운 시작(백신 검사 12~17초)이라 평균에서 뺀다. 복사하는 이유: 설정 파일이 exe 옆에 생기므로 사용자의 exe 자리에서 띄우면 사용자 설정을 건드린다.
+- 측정 함정 3: `dist/` 에 남아 있던 exe 는 0.1.2 빌드였다(창 제목으로 확인). 「바꾸기 전」은 같은 날 같은 PyInstaller 로 main 을 다시 빌드한 것으로 잰다.
+- 재발 방지: `tests/test_splash.py` — 그림 닫기 순서(App → update → close → mainloop), 창 실패 때도 닫힘, CLI·`--version` 은 바로 닫힘, `pyi_splash` 가 없거나 실패해도 조용함, `build.bat` 의 `--splash` 와 PNG(20KB 미만), `import gui` 와 첫 `update()` 가 PIL·pi_heif·numpy 를 적재하지 않음.
